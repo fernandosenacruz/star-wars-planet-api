@@ -2,17 +2,21 @@ package com.github.io.fernandosenacruz.star_wars_planet_api.application.reposito
 
 import com.github.io.fernandosenacruz.star_wars_planet_api.application.domain.Planet;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.PLANET;
 import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.INVALID_PLANET;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -22,6 +26,11 @@ public class PlanetRepositoryTest {
 
     @Autowired
     private TestEntityManager testEntityManager;
+
+    @AfterEach
+    public void setNullPlanetId() {
+        PLANET.setId(null);
+    }
 
     @Test
     public void createPlanet_WithValidData_ShouldCreatePlanet() {
@@ -41,10 +50,26 @@ public class PlanetRepositoryTest {
 
     @Test
     public void createPlanet_WithExistingPlanet_ShouldThrowException() {
-        Planet planet = testEntityManager.persistAndFlush(PLANET);
+        Planet planet = testEntityManager.persistFlushFind(PLANET);
         testEntityManager.detach(planet);
         planet.setId(null);
 
         assertThatThrownBy(() -> planetRepository.save(planet)).isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    public void getPlanet_ById_ReturnsPlanet() {
+        Planet planet = testEntityManager.persistFlushFind(PLANET);
+        Optional<Planet> planet_sut = planetRepository.findById(planet.getId());
+
+        assertThat(planet_sut.isPresent()).isTrue();
+        assertThat(planet_sut.get()).isEqualTo(planet);
+    }
+
+    @Test
+    public void getPlanet_ByNonexistentId_ReturnsNotFound() {
+        Optional<Planet> planet = planetRepository.findById(anyLong());
+
+        assertThat(planet.isPresent()).isFalse();
     }
 }
