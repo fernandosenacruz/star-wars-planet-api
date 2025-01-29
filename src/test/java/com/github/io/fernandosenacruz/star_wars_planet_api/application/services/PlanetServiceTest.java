@@ -94,7 +94,7 @@ public class PlanetServiceTest {
 
         assertThat(planets_sut).isNotEmpty();
         assertThat(planets_sut.size()).isEqualTo(planets.size());
-        assertThat(planets_sut.getFirst()).isEqualTo(PLANET);
+        assertThat(planets_sut.stream().findFirst().orElseThrow()).isEqualTo(PLANET);
     }
 
     @Test
