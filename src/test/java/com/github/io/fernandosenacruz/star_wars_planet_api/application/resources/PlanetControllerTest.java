@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(PlanetController.class)
-public class PlanentControllerTest {
+public class PlanetControllerTest {
     @MockBean
     private PlanetService planetService;
 
