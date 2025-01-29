@@ -2,6 +2,7 @@ package com.github.io.fernandosenacruz.star_wars_planet_api.application.resource
 
 import com.github.io.fernandosenacruz.star_wars_planet_api.application.domain.Planet;
 import com.github.io.fernandosenacruz.star_wars_planet_api.application.services.PlanetService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ public class PlanetController {
     private PlanetService planetService;
 
     @PostMapping
-    public ResponseEntity<Planet> createPlanet(@RequestBody Planet planet) {
+    public ResponseEntity<Planet> createPlanet(@RequestBody @Valid Planet planet) {
          Planet newPlanet = planetService.create(planet);
          return ResponseEntity.status(HttpStatus.CREATED).body(newPlanet);
     }
