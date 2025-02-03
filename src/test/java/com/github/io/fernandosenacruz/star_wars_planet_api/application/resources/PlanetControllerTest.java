@@ -7,17 +7,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
-import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.INVALID_PLANET;
+import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.*;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
-import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.PLANET;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -64,7 +67,7 @@ public class PlanetControllerTest {
 
         mockMvc.perform(get("/planets/{id}", id))
                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value(PLANET));
+               .andExpect(jsonPath("$").value(PLANET));
     }
 
     @Test
@@ -81,8 +84,8 @@ public class PlanetControllerTest {
         when(planetService.getByName(PLANET.getName())).thenReturn(Optional.of(PLANET));
 
         mockMvc.perform(get("/planets/name/" + PLANET.getName()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value(PLANET));
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$").value(PLANET));
     }
 
     @Test
@@ -91,6 +94,52 @@ public class PlanetControllerTest {
         when(planetService.getByName(name)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/planets/name/", name))
+               .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void getPlanets_ReturnsFilteredPlanets() throws Exception {
+        when(planetService.getPlanets(null, null)).thenReturn(PLANETS);
+        when(planetService.getPlanets(PLANET.getClimate(), PLANET.getTerrain())).thenReturn(List.of(PLANET));
+
+        mockMvc.perform(get("/planets"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$", hasSize(PLANETS.size())));
+
+        mockMvc.perform(
+                       get("/planets?" + String.format(
+                               "climate=%s&terrain=%s",
+                               PLANET.getClimate(),
+                               PLANET.getTerrain()
+                       )))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$", hasSize(1)))
+               .andExpect(jsonPath("$[0]").value(PLANET));
+    }
+
+    @Test
+    public void getPlanets_ReturnsNoPlanets() throws Exception {
+        when(planetService.getPlanets(null, null)).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/planets"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    public void removePlanet_WithExistingId_ShouldRemovePlanet() throws Exception {
+        Long id = anyLong();
+
+        mockMvc.perform(delete("/planets/{id}", id))
+               .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void removePlanet_WithNonexistentId_ShouldThrowException() throws Exception {
+        Long id = 1L;
+        doThrow(new EmptyResultDataAccessException(1)).when(planetService).delete(id);
+
+        mockMvc.perform(delete("/planets/{id}", id))
                .andExpect(status().isNotFound());
     }
 }

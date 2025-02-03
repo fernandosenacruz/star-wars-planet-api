@@ -2,20 +2,23 @@ package com.github.io.fernandosenacruz.star_wars_planet_api.application.reposito
 
 import com.github.io.fernandosenacruz.star_wars_planet_api.application.domain.Planet;
 
+import com.github.io.fernandosenacruz.star_wars_planet_api.application.domain.PlanetQueryBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Example;
+import org.springframework.test.context.jdbc.Sql;
 
+import java.util.List;
 import java.util.Optional;
 
+import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.PLANET;
-import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.INVALID_PLANET;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -88,5 +91,45 @@ public class PlanetRepositoryTest {
         Optional<Planet> planet_sut = planetRepository.findByName(anyString());
 
         assertThat(planet_sut.isPresent()).isFalse();
+    }
+
+    @Sql(scripts = "/insert_many_planets.sql")
+    @Test
+    public void getPlanets_ReturnsFilteredPlanets() {
+        Example<Planet> query = PlanetQueryBuilder.example(new Planet());
+        Example<Planet> queryWithFilters =
+                PlanetQueryBuilder.example(new Planet(PLANET.getClimate(), PLANET.getTerrain()));
+
+        List<Planet> planets = planetRepository.findAll(query);
+        List<Planet> filteredPlanets = planetRepository.findAll(queryWithFilters);
+
+        assertThat(planets).isNotEmpty();
+        assertThat(planets).hasSize(PLANETS.size());
+
+        assertThat(filteredPlanets).isNotEmpty();
+        assertThat(filteredPlanets.size()).isEqualTo(1);
+        assertThat(filteredPlanets.get(0).getName()).isEqualTo(PLANET.getName());
+        assertThat(filteredPlanets.get(0).getClimate()).isEqualTo(PLANET.getClimate());
+        assertThat(filteredPlanets.get(0).getTerrain()).isEqualTo(PLANET.getTerrain());
+    }
+
+    @Test
+    public void getPlanets_ReturnsNoPlanets() {
+        Example<Planet> query = PlanetQueryBuilder.example(new Planet());
+
+        List<Planet> planets = planetRepository.findAll(query);
+
+        assertThat(planets).isEmpty();
+    }
+
+    @Test
+    public void removePlanet_WithExistingId_ShouldRemovePlanet() {
+        Planet planet = testEntityManager.persistFlushFind(PLANET);
+
+        planetRepository.deleteById(planet.getId());
+
+        Planet planet_sut = testEntityManager.find(Planet.class, planet.getId());
+
+        assertThat(planet_sut).isNull();
     }
 }
