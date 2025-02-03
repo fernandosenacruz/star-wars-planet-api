@@ -13,8 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Optional;
 
 import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.INVALID_PLANET;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.PLANET;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -74,6 +73,24 @@ public class PlanetControllerTest {
         when(planetService.get(id)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/planets/{id}", id))
+               .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void getPlanet_ByExistingName_ReturnsPlanet() throws Exception {
+        when(planetService.getByName(PLANET.getName())).thenReturn(Optional.of(PLANET));
+
+        mockMvc.perform(get("/planets/name/" + PLANET.getName()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(PLANET));
+    }
+
+    @Test
+    public void getPlanet_ByNonexistentName_ReturnsNotFound() throws Exception {
+        String name = anyString();
+        when(planetService.getByName(name)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/planets/name/", name))
                .andExpect(status().isNotFound());
     }
 }

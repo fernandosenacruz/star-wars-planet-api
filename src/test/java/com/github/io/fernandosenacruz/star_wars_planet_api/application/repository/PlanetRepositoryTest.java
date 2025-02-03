@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.PLANET;
 import static com.github.io.fernandosenacruz.star_wars_planet_api.common.PlanetConstants.INVALID_PLANET;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -71,5 +72,21 @@ public class PlanetRepositoryTest {
         Optional<Planet> planet = planetRepository.findById(anyLong());
 
         assertThat(planet.isPresent()).isFalse();
+    }
+
+    @Test
+    public void getPlanet_ByExistingName_ReturnsPlanet() {
+        Planet planet = testEntityManager.persistFlushFind(PLANET);
+        Optional<Planet> planet_sut = planetRepository.findByName(planet.getName());
+
+        assertThat(planet_sut.isPresent()).isTrue();
+        assertThat(planet_sut.get()).isEqualTo(planet);
+    }
+
+    @Test
+    public void getPlanet_ByNonexistentName_ReturnsNotFound() {
+        Optional<Planet> planet_sut = planetRepository.findByName(anyString());
+
+        assertThat(planet_sut.isPresent()).isFalse();
     }
 }
