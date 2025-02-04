@@ -22,6 +22,6 @@ INSERT INTO planets (
     terrain
 ) VALUES (
      'Yavin IV',
-     'temperate',
+     'temperate, tropical',
      'jungle, rainforest'
  );

@@ -8,7 +8,9 @@ public class PlanetQueryBuilder {
         ExampleMatcher matcher = ExampleMatcher
                 .matchingAll()
                 .withIgnoreCase()
-                .withIgnoreNullValues();
+                .withIgnoreNullValues()
+                .withMatcher("climate", ExampleMatcher.GenericPropertyMatchers.contains())
+                .withMatcher("terrain", ExampleMatcher.GenericPropertyMatchers.contains());
 
         return Example.of(planet, matcher);
     }
